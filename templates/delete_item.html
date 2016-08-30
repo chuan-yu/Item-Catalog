@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="page-title">Delete Category</h2>
+<p>Are you sure you want to delete item <strong>{{item.name}}</strong> in category <strong>{{category.name}}</strong>?</p>
+<form method="post" action="{{url_for('deleteCategoryItem', category_id=category.id, item_id=item.id)}}">
+    <button type="submit">Yes</button>
+    <!-- if 'No', redirect to the previous page -->
+    <a href="{{request.referrer}}">No</a>
+</form>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<form id="update_category_item" method="post" action="{{url_for('updateCategoryItem', category_id=category.id, item_id=item.id)}}">
+    <label for="name">Title</label>
+    <input name="title" value={{item.name}}>
+    <label for="description">Description</label>
+    <input name="description" value="{{item.description}}">
+    <label for="category">Category</label>
+    <select name="category">
+        {% for c in categories %}
+            {% if c.name == category.name %}
+            <option value="{{c.name}}" selected>{{c.name}}</option>
+            {% else %}
+            <option value="{{c.name}}">{{c.name}}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <button type="submit">Submit</button>
+</form>
+
+{% endblock %}

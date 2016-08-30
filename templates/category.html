@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="categories">
+    {% include 'category_list.html' %}
+</div>
+
+<div class="item-section">
+    <h2>{{category.name}}</h2>
+    <ul>
+        {% for item in items %}
+        <li><a href="{{url_for('categoryItem', category_id=category.id, item_id=item.id)}}">{{item.name}}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

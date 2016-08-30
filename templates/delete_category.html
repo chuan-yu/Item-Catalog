@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="page-title">Delete Category</h2>
+<p>Are you sure you want to delete {{category.name}}</p>
+<form method="post" action="{{url_for('deleteCategory', category_id=category.id)}}">
+    <button type="submit">Yes</button>
+    <a href="{{request.referrer}}">No</a>
+</form>
+{% endblock %}
