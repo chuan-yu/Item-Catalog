@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Item
 
@@ -23,7 +23,7 @@ def inject_categories():
 
 @app.route('/')
 def home_page():
-    items = session.query(Item).order_by(Item.created).limit(5)
+    items = session.query(Item).order_by(desc(Item.created)).limit(5)
     return render_template('index.html', items=items)
 
 @app.route('/category/<int:category_id>')
@@ -63,9 +63,9 @@ def new_item():
             flash("Item %s already exists" % item_to_check.name)
             return render_template('new_item.html')
 
-        new_Item = Item(name=request.form['name'].lower(), category_id=request.form['category'],
+        new_item = Item(name=request.form['name'].lower(), category_id=request.form['category'],
                         description=request.form['description'])
-        session.add(new_Item)
+        session.add(new_item)
         session.commit()
         flash("Item %s successfully added" % new_item.name)
         return redirect(url_for('home_page'))
@@ -93,6 +93,10 @@ def update_item(category_id, item_id):
 def delete_category(category_id):
     category = session.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST':
+        items_in_category = session.query(Item).filter_by(category_id=category_id).all()
+        for item in items_in_category:
+            session.delete(item)
+            session.commit()
         session.delete(category)
         session.commit()
         flash("Category %s deleted successfully" % category.name)
