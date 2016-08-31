@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2 class="page-title">Create New Item</h2>
-<form id="new_category_item" method="post" action="{{url_for('newCategoryItem', category_id=category.id)}}">
-    <label for="name">Title</label>
-    <input name="title">
+<form id="new_category_item" method="post" action="{{url_for('new_item')}}">
+    <label for="name">Name</label>
+    <input name="name">
     <label for="description">Description</label>
-    <input name="description">
+    <textarea name="description" rows="4" cols="50"></textarea>
     <label for="category">Category</label>
     <select name="category">
         {% for c in categories %}
-        <option value="{{c.name}}">{{c.name}}</option>
+        <option value="{{c.id}}">{{c.name}}</option>
         {% endfor %}
     </select>
     <button type="submit">Submit</button>

@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2 class="page-title">Create New Category</h2>
-<form id="new_category" method="post" action="{{url_for('newCategory')}}">
+<form id="new_category" method="post" action="{{url_for('new_category')}}">
     <label for="name">Name</label>
-    <input name="title">
+    <input name="name">
     <button type="submit">Submit</button>
 </form>
 

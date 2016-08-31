@@ -8,6 +8,17 @@
     <link rel="stylesheet" href="/css/bootstrap.min.css" -->
 </head>
 <body>
+    <div class = "flash">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li> <strong> {{ message }} </strong> </li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
     <main class="main">
         {% block content %}
         {% endblock %}

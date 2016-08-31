@@ -9,7 +9,7 @@
     <h2>{{category.name}}</h2>
     <ul>
         {% for item in items %}
-        <li><a href="{{url_for('categoryItem', category_id=category.id, item_id=item.id)}}">{{item.name}}</a></li>
+        <li><a href="{{url_for('category_item', category_id=category.id, item_id=item.id)}}">{{item.name}}</a></li>
         {% endfor %}
     </ul>
 </div>
