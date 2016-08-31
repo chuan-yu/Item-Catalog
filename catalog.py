@@ -73,7 +73,7 @@ def new_item():
         return render_template('new_item.html')
 
 @app.route('/category/<int:category_id>/<int:item_id>/update', methods=['GET', 'POST'])
-def update_category_item(category_id, item_id):
+def update_item(category_id, item_id):
     item = session.query(Item).filter_by(category_id=category_id, id=item_id).one()
     if request.method == 'POST':
         if request.form['name']:
@@ -87,7 +87,7 @@ def update_category_item(category_id, item_id):
         flash("Item %s successfully updated" % item.name)
         return redirect(url_for("home_page"))
     else:
-        return render_template('update_category_item.html', category_id=category_id, item=item)
+        return render_template('update_item.html', category_id=category_id, item=item)
 
 @app.route('/category/<int:category_id>/delete', methods=['GET', 'POST'])
 def delete_category(category_id):

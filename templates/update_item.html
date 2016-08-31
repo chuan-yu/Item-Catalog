@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<form id="update_category_item" method="post" action="{{url_for('update_category_item', category_id=category_id, item_id=item.id)}}">
+<form id="update_item" method="post" action="{{url_for('update_item', category_id=category_id, item_id=item.id)}}">
     <label for="name">Title</label>
     <input name="name" value="{{item.name}}">
     <label for="description">Description</label>
