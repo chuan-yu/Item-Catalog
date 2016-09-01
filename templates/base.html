@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head itemscope itemtype="http://schema.org/Article">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
     <meta charset="utf-8">
     <title>{% block title%}{% endblock %}</title>
     <!-- <link rel="stylesheet" href="/css/main.css" />
     <link rel="stylesheet" href="/css/bootstrap.min.css" -->
+    {% block header %}{% endblock %}
 </head>
 <body>
+    <nav>
+        <ul>
+            <li><a href="{{url_for('login')}}">Login</a></li>
+        </ul>
+    </nav>
     <div class = "flash">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
