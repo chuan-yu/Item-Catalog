@@ -2,9 +2,11 @@
 {% block content %}
 <h2 class="page-title">Create New Category</h2>
 <form id="new_category" method="post" action="{{url_for('new_category')}}">
-    <label for="name">Name</label>
-    <input name="name">
-    <button type="submit">Submit</button>
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input class="form-control" name="name">
+    </div>
+    <button class="btn btn-primary" type="submit">Submit</button>
+    <a href="{{request.referrer}}" class="btn btn-default">Cancel</a>
 </form>
-
 {% endblock %}
