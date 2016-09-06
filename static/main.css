@@ -1,0 +1,23 @@
+body {
+    background-color: #F2F3F4;
+}
+
+main {
+    background-color: white;
+}
+
+.main-section {
+    margin-top: 15px;
+}
+.category-list {
+    border-right: 1px solid #95A5A6;
+}
+
+.latest-items {
+    padding-left: 25px;
+}
+
+ul {
+    list-style: none;
+    padding: 0px;
+}

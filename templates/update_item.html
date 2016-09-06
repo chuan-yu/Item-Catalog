@@ -5,7 +5,7 @@
     <label for="name">Title</label>
     <input name="name" value="{{item.name}}">
     <label for="description">Description</label>
-    <input name="description" value="{{item.description}}">
+    <textarea name="description" rows="4" cols="50">{{item.description}}</textarea>
     <label for="category">Category</label>
     <select name="category">
         {% for c in categories %}

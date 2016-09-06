@@ -1,16 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="categories">
-    {% include 'category_list.html' %}
-</div>
-<p><a href="{{url_for('new_item')}}">Add New Item</a></p>
-<div class="latest_items">
-    <h3>Latest Items</h3>
-    <ul>
-        {% for item in items %}
-        <li><a href="{{url_for('category_item', category_id=item.category_id, item_id=item.id)}}">{{item.name}}</a></li>
-        {% endfor %}
-    </ul>
+<div class="row">
+    <div class="col-xs-12 col-sm-3 main-section category-list">
+        {% include 'category_list.html' %}
+    </div>
+
+    <div class="col-xs-12 col-sm-9 main-section latest-items">
+        {% if login_session.username %}
+        <p><a href="{{url_for('new_item')}}">Add New Item</a></p>
+        {% endif %}
+        <h3>Latest Items</h3>
+        <ul class="latest-items-list">
+            {% for item in items %}
+            <li class="latest-item-list-item"><a href="{{url_for('category_item', category_id=item.category_id, item_id=item.id)}}">{{item.name}}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
 {% endblock %}

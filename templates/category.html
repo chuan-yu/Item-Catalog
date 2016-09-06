@@ -6,7 +6,9 @@
 </div>
 <div class="item-section">
     <h2>{{category.name}}</h2>
+    {% if login_session.user_id and login_session.user_id == category.user_id %}
     <p><a href="{{url_for('delete_category', category_id=category.id)}}">Delete Category</a></p>
+    {% endif %}
     <ul>
         {% for item in items %}
         <li><a href="{{url_for('category_item', category_id=category.id, item_id=item.id)}}">{{item.name}}</a></li>
