@@ -6,6 +6,11 @@ main {
     background-color: white;
 }
 
+form {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
 .main-section {
     margin-top: 15px;
 }

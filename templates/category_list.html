@@ -4,6 +4,6 @@
 <p><a href="{{url_for('new_category')}}">Add New Category</a></p>
 {% endif %}
 {% for cat in categories:%}
-<li><a href="{{url_for('category', category_id=cat.id)}}">{{cat.name}}</a></li>
+<li><a class="text-capitalize" href="{{url_for('category', category_id=cat.id)}}">{{cat.name}}</a></li>
 {% endfor %}
 </ul>
