@@ -6,17 +6,8 @@ import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask import session as login_session
 from flask import make_response
-from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Item, User
-#from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
 from oauth2client import client
-
-# Initialize database connection
-engine = create_engine('sqlite:///catalog.db')
-Base.metadata.bind = engine
-DBSession = sessionmaker(bind=engine)
-session = DBSession()
 
 app = Flask(__name__)
 
@@ -29,7 +20,7 @@ CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_i
 # Make categories avaiable for all templates automatically
 @app.context_processor
 def inject_categories():
-    categories = session.query(Category).all()
+    categories = Category.all()
     return dict(categories=categories)
 
 # Make login_session available for all templates automatically
@@ -37,35 +28,36 @@ def inject_categories():
 def inject_session():
     return dict(login_session=login_session)
 
+
 @app.route('/')
 def home_page():
-    items = session.query(Item).order_by(desc(Item.created)).limit(5)
+    items = Item.order_by_created_with_limit(limit=7)
     return render_template('index.html', items=items)
 
 @app.route('/category/<int:category_id>')
 def category(category_id):
-    category = session.query(Category).filter_by(id=category_id).one()
-    items = session.query(Item).filter_by(category_id=category_id).all()
+    category = Category.by_id(category_id)
+    items = Item.by_category_id(category_id)
     return render_template('category.html', category=category, items=items)
 
 @app.route('/category/<int:category_id>/<int:item_id>/')
 def category_item(category_id, item_id):
-    item = session.query(Item).filter_by(category_id=category_id, id=item_id).one()
+    item = Item.by_cat_id_and_item_id(category_id, item_id)
     return render_template('category_item.html', item=item)
 
 @app.route('/category/new', methods=['GET', 'POST'])
 def new_category():
     if request.method == 'POST':
         if login_session.get('user_id'):
-            # use lower() function to convert user input to lowercase
-            cat = session.query(Category).filter_by(name=request.form['name'].lower()).first()
+
+            # check the category name does not already exist
+            cat = Category.by_name(name=request.form['name'].lower())
             if cat != None:
                 flash("Category %s already exists" % cat.name)
                 return render_template('new_category.html')
-            new_category = Category(name=request.form['name'].lower(),
+
+            new_category = Category.new(name=request.form['name'],
                                     user_id=login_session.get('user_id'))
-            session.add(new_category)
-            session.commit()
             flash("New category %s was added sucessfully" % new_category.name)
             return redirect(url_for('home_page'))
         else:
@@ -81,18 +73,18 @@ def new_category():
 def new_item():
     if request.method == 'POST':
         if login_session.get('user_id'):
-            # use lower() function to convert user input to lowercase
-            item_to_check = session.query(Item).filter_by(name=request.form['name'].lower()).first()
+
+            # check that the name does not already exist in the category
+            item_to_check = Item.by_name_and_cat_id(name=request.form['name'],
+                            category_id=request.form['category'])
             if item_to_check != None:
                 flash("Item %s already exists" % item_to_check.name)
                 return render_template('new_item.html')
 
-            new_item = Item(name=request.form['name'].lower(),
+            new_item = Item.new(name=request.form['name'],
                             category_id=request.form['category'],
                             description=request.form['description'],
                             user_id = login_session.get('user_id'))
-            session.add(new_item)
-            session.commit()
             flash("Item %s successfully added" % new_item.name)
             return redirect(url_for('home_page'))
         else:
@@ -107,7 +99,8 @@ def new_item():
 
 @app.route('/category/<int:category_id>/<int:item_id>/update', methods=['GET', 'POST'])
 def update_item(category_id, item_id):
-    item = session.query(Item).filter_by(category_id=category_id, id=item_id).one()
+    item = Item.by_cat_id_and_item_id(category_id=category_id, item_id=item_id)
+
     if request.method == 'POST':
         if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
             if request.form['name']:
@@ -116,8 +109,8 @@ def update_item(category_id, item_id):
                 item.description = request.form['description']
             if request.form['category']:
                 item.category_id = request.form['category']
-            session.add(item)
-            session.commit()
+
+            Item.update(item)
             flash("Item %s successfully updated" % item.name)
             return redirect(url_for("home_page"))
     else:
@@ -129,15 +122,16 @@ def update_item(category_id, item_id):
 
 @app.route('/category/<int:category_id>/delete', methods=['GET', 'POST'])
 def delete_category(category_id):
-    category = session.query(Category).filter_by(id=category_id).one()
+    category = Category.by_id(id=category_id)
+    # category = session.query(Category).filter_by(id=category_id).one()
     if request.method == 'POST':
         if login_session.get('user_id') and login_session.get('user_id') == category.user_id:
-            items_in_category = session.query(Item).filter_by(category_id=category_id).all()
+            # delete all items in the category
+            items_in_category = Item.by_category_id(category_id=category_id)
             for item in items_in_category:
-                session.delete(item)
-                session.commit()
-            session.delete(category)
-            session.commit()
+                Item.delete(item)
+            # delete the category
+            Category.delete(category)
             flash("Category %s deleted successfully" % category.name)
             return redirect(url_for('home_page'))
     else:
@@ -148,16 +142,15 @@ def delete_category(category_id):
 
 @app.route('/category/<int:category_id>/<int:item_id>/delete', methods=['GET', 'POST'])
 def delete_item(category_id, item_id):
-    item = session.query(Item).filter_by(category_id=category_id, id=item_id).one()
+    item = Item.by_cat_id_and_item_id(category_id=category_id, item_id=item_id)
     if request.method == 'POST':
         if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
-            session.delete(item)
-            session.commit()
+            Item.delete(item)
             flash("Item %s deleted successfully" % item.name)
             return redirect(url_for('home_page'))
     else:
         if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
-            category = session.query(Category).filter_by(id=category_id).one()
+            category = Category.by_id(id=category_id)
             return render_template('delete_item.html', category=category, item=item)
         else:
             return redirect(url_for('error.html'))
@@ -211,13 +204,12 @@ def gconnect():
     user_info = answer.json()
 
     # check whether the user exists in the DB. If not, create new user.
-    user = session.query(User).filter_by(email=user_info['email']).first()
+    user = User.by_email(email=user_info['email'])
     if user:
         user_id = user.id
     else:
-        new_user = User(email=user_info['email'], picture=user_info['picture'])
-        session.add(new_user)
-        session.commit()
+        new_user = User.new(username=user_info['name'],
+                    email=user_info['email'], picture=user_info['picture'])
         user_id = User.get_id_by_email(session, new_user.email)
 
 
