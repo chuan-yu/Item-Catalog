@@ -9,7 +9,8 @@ from flask import make_response
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Item, User
-from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
+#from oauth2client.client import flow_from_clientsecrets, FlowExchangeError
+from oauth2client import client
 
 # Initialize database connection
 engine = create_engine('sqlite:///catalog.db')
@@ -170,119 +171,92 @@ def login():
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
+
     # validate the STATE
     if request.args.get('state') != login_session['state']:
-        response = make_response(json.dumps('Invalid state parameter.'), 401)
-        response.headers['Content-Type'] = 'application/json'
+        response = create_json_response('Invalid state parameter.', 401)
         return response
 
-    # Obtain authorization code
-    code = request.data
-    try:
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='', redirect_uri='postmessage')
-        credentials = oauth_flow.step2_exchange(code)
-    except FlowExchangeError:
-        response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
-        response.headers['Content-Type'] = 'application/json'
+    # Get one-time code from the request
+    auth_code = request.data
+
+    # exchange access token with the one-time code
+    credentials = client.credentials_from_clientsecrets_and_code('client_secrets.json',
+                ['https://www.googleapis.com/auth/userinfo.profile', 'profile', 'email'],
+                auth_code)
+
+    # check that the access is valid
+    token_status = valid_token(credentials)
+
+    # if access token not valid, abort
+    if token_status['valid'] == False:
+        response = create_json_response(token_status['error_message'],
+                    token_status['code'])
         return response
 
-    # Check that the access token is valid
-    access_token = credentials.access_token
-    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token
-    h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
-    # In case of error, abort
-    if result.get('error') is not None:
-        response = make_response(json.dumps(result.get('error')), 500)
-        response.headers['Content-Type'] = 'application/json'
+    # check whether the user is already logged in
+    if is_user_logged_in_google(login_session, credentials.id_token['sub']):
+        response = create_json_response('Current user is already connected', 200)
         return response
 
-    # Verify that the access token is used for the intended user
-    google_id = credentials.id_token['sub']
-    if result['user_id'] != google_id:
-        response = make_response(json.dumps("Token's user ID doesn't match given user ID."), 401)
-        response.headers['Content-Type'] = 'application/json'
-        return response
+    # store credentials in the session for later use
+    login_session['credentials'] = client.OAuth2Credentials.to_json(credentials)
+    login_session['google_id'] = credentials.id_token['sub']
 
-    # Verify that the access token is valid for this app
-    if result['issued_to'] != CLIENT_ID:
-        response = make_response(json.dumps("Token's client ID does not match app's.", 401))
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
-    # Check that user is not already logged in
-    stored_access_token = login_session.get('access_token')
-    stored_google_id = login_session.get('google_id')
-    if stored_access_token is not None and google_id == stored_google_id:
-        response = make_response(json.dumps("Current user is already connected", 200))
-        response.headers['Content-Type'] = 'application/json'
-        return response
-
-    # Store the access token and google_id in the session
-    login_session['access_token'] = credentials.access_token
-    login_session['google_id'] = google_id
-
-    # Get user info
+    # use access token to get user profile
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
 
-    data = answer.json()
+    user_info = answer.json()
 
-    # check that the user already exits in the database. If not, create a new user
-    try:
-        user = session.query(User).filter_by(email=data['email']).one()
-    except:
-        user = None
-
-    if user is None:
-        new_user = User(email=data['email'], username=data['username'])
+    # check whether the user exists in the DB. If not, create new user.
+    user = session.query(User).filter_by(email=user_info['email']).first()
+    if user:
+        user_id = user.id
+    else:
+        new_user = User(email=user_info['email'], picture=user_info['picture'])
         session.add(new_user)
         session.commit()
+        user_id = User.get_id_by_email(session, new_user.email)
 
-    user_id = User.get_id_by_email(session, data['email'])
+
+    # store user info in the session
+    login_session['username'] = user_info['name']
     login_session['user_id'] = user_id
-    login_session['username'] = data['name']
-    login_session['picture'] = data['picture']
-    login_session['email'] = data['email']
+    login_session['picture'] = user_info['picture']
+    login_session['email'] = user_info['email']
 
-    output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("You are now logged in as %s" % login_session['username'])
-    print "done!"
+    output = ""
+    output += "welcome"
+
     return output
+
 
 @app.route('/gdisconnect')
 def gdisconnect():
-    access_token = login_session.get('access_token')
-    if access_token is None:
-        print 'Access Token is None'
-        response = make_response(json.dumps('Current user not connected.'), 401)
-        response.headers['Content-Type'] = 'application/json'
+    credentials = client.OAuth2Credentials.from_json(login_session['credentials'])
+    if credentials is None:
+        print 'Credentials is None'
+        response = create_json_response('Current user not connected.', 401)
         return response
 
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
-    h = httplib2.Http()
-    result = h.request(url, 'GET')[0]
-    if result['status'] == '200':
-        del login_session['access_token']
-        del login_session['google_id']
-        del login_session['user_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
-        response.headers['Content-Type'] = 'application/json'
-        return response
+    # revoke access token
+    try:
+        credentials.revoke(httplib2.Http())
+    except client.TokenRevokeError:
+        print 'Token invalid. Pocceed anyway'
+
+    # delete token and user info from the session
+    del login_session['credentials']
+    del login_session['google_id']
+    del login_session['user_id']
+    del login_session['username']
+    del login_session['email']
+    del login_session['picture']
+    response = create_json_response('Successfully disconnected', 200)
+    return response
+
 
 @app.route('/error')
 def error():
@@ -309,6 +283,66 @@ def category_json(category_id):
 def item_json(category_id, item_id):
     item = session.query(Item).filter_by(category_id=category_id, id=item_id).first()
     return jsonify(Item=[item.serialize])
+
+
+# Helper Functions
+
+
+def create_json_response(message, code):
+    response = make_response(json.dumps(message), code)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+# validate Google OAuth access token
+def valid_token(credentials):
+    id_token = credentials.id_token
+    access_token = credentials.access_token
+    token_status = {}
+
+    # validate token by sending a GET request to the validation url
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+           % access_token)
+    h = httplib2.Http()
+    result = json.loads(h.request(url, 'GET')[1])
+
+    # If there was an error in the result, abort
+    if result.get('error') is not None:
+        token_status['valid'] = False
+        token_status['error_message'] = result.get('error')
+        token_status['response_code'] = 500
+        return token_status
+
+    # verify that the access token is used for the intented user
+    if result['user_id'] != id_token['sub']:
+        token_status['valid'] = False
+        token_status['error_message'] = "Token's user ID doesn't match given user ID."
+        token_status['response_code'] = 401
+        return token_status
+
+    # verify that the access token is issued to this app
+    if result['issued_to'] != CLIENT_ID:
+        token_status['valid'] = False
+        token_status['error_message'] = "Token's client ID does not match app's."
+        token_status['response_code'] = 401
+        return token_status
+
+    # everything is okay, return valid
+    token_status['valid'] = True
+    token_status['error_message'] = ""
+    token_status['response_code'] = 200
+    return token_status
+
+# check whether used is already logged using Goolge account
+def is_user_logged_in_google(session, google_id):
+    stored_credentials = session.get('credentials')
+    stored_google_id = session.get('google_id')
+    if stored_credentials is not None and stored_google_id == google_id:
+        return True
+    else:
+        return False
+
+
+
 
 if __name__ == '__main__':
     app.secret_key = "fwC3zfow9Rj0J801u99d3b66gjZAI1nn"

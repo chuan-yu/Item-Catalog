@@ -3,7 +3,7 @@
 <!-- In header, load pre-requisites for Google Sign In -->
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer></script>
-<!-- <script>
+<script>
     function start() {
         gapi.load('auth2', function() {
             auth2 = gapi.auth2.init({
@@ -11,20 +11,10 @@
             });
         });
      }
- </script> -->
+ </script>
 {% endblock %}
 {% block content %}
-<div id="signInButton">
-    <span class="g-signin"
-    data-scope="openid email"
-    data-clientid="41708710474-0r1gt2oaq1hvs0rvjbvtppqci8hphl37.apps.googleusercontent.com"
-    data-redirecturi="postmessage"
-    data-accesstype="offline"
-    data-cookiepolicy="single_host_origin"
-    data-callback="signInCallback"
-    data-approvalprompt="force">
-    </span>
-</div>
+<button id="signinButton">Sign in with Google</button>
 <div id="result"></div>
 <script>
     $('#signinButton').click(function() {
