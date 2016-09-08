@@ -23,12 +23,12 @@ The application is created using **Flask** framework and **SqlAlchemy**
 
 ### Step 2: Start vagrant machine
 
-Start the Vagrant machine using command: `vagrant up`
-SSH to the Vagrant machine using command: `vagrant ssh`
+- Start the Vagrant machine using command: `vagrant up`
+- SSH to the Vagrant machine using command: `vagrant ssh`
 
 ### Step 3: Run the pogramme in Vagrant
 
-Initialize the database using command: `python database_setup.py`
-Start the programme using command: `python catalog.py`
+- Initialize the database using command: `python database_setup.py`
+- Start the programme using command: `python catalog.py`
 
 
