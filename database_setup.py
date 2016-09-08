@@ -17,7 +17,7 @@ class User(Base):
     registered = Column(DateTime, default=datetime.datetime.utcnow)
 
     @classmethod
-    def get_id_by_email(cls, session, email):
+    def get_id_by_email(cls, email):
         try:
             user = session.query(cls).filter_by(email=email).one()
             return user.id

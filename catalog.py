@@ -270,7 +270,7 @@ def gconnect():
         # create new user and get the user_id
         new_user = User.new(username=user_info['name'],
                     email=user_info['email'], picture=user_info['picture'])
-        user_id = User.get_id_by_email(session, new_user.email)
+        user_id = User.get_id_by_email(new_user.email)
 
 
     # store user info in the session
