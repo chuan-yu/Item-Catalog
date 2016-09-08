@@ -6,11 +6,12 @@
         {% include 'category_list.html' %}
     </div>
 
-    <div class="col-xs-12 col-sm-9 main-section latest-items">
+    <div class="col-xs-12 col-sm-9 main-section item-section">
+
+        <h3 class="item-title">Latest Items</h3>
         {% if login_session.username %}
-        <p><a href="{{url_for('new_item')}}">Add New Item</a></p>
+        <a href="{{url_for('new_item')}}">Add Item</a>
         {% endif %}
-        <h3>Latest Items</h3>
         <ul class="latest-items-list">
             {% for item in items %}
             <li class="latest-item-list-item"><a href="{{url_for('category_item', category_id=item.category_id, item_id=item.id)}}">{{item.name}}</a></li>

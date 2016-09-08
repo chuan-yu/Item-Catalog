@@ -6,8 +6,8 @@
     <p>{{item.description}}</p>
     {% if login_session.user_id and login_session.user_id == item.user_id %}
     <p>
-        <a class="btn btn-default btn-sm" href="{{url_for('update_item', category_id=item.category_id, item_id=item.id)}}">Update</a>
-        <a class="btn btn-default btn-sm" href="{{url_for('delete_item', category_id=item.category_id, item_id=item.id)}}">Delete</a>
+        <a class="btn btn-info btn-sm" href="{{url_for('update_item', category_id=item.category_id, item_id=item.id)}}">Update</a>
+        <a class="btn btn-danger btn-sm" href="{{url_for('delete_item', category_id=item.category_id, item_id=item.id)}}">Delete</a>
     </p>
     {% endif %}
 </div>

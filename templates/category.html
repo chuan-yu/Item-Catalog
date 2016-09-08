@@ -6,10 +6,10 @@
         {% include 'category_list.html' %}
     </div>
     <div class="col-xs-12 col-sm-9 main-section item-section">
+        <h3 class="category-title text-capitalize">{{category.name}}</h3>
         {% if login_session.user_id and login_session.user_id == category.user_id %}
-        <p><a href="{{url_for('delete_category', category_id=category.id)}}">Delete Category</a></p>
+        <a href="{{url_for('delete_category', category_id=category.id)}}">Delete Category</a>
         {% endif %}
-        <h3 class="text-capitalize">{{category.name}}</h3>
         <ul>
             {% for item in items %}
             <li><a class="text-capitalize" href="{{url_for('category_item', category_id=category.id, item_id=item.id)}}">{{item.name}}</a></li>

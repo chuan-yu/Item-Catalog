@@ -15,7 +15,7 @@
             {% if not login_session.username %}
             <li><a href="{{url_for('login')}}">Login</a></li>
             {% else %}
-            <li><button id="logout_button">Logout</button></li>
+            <li><a href="#" id="logout_button">Logout</a></li>
             {% endif %}
         </ul>
     </nav>

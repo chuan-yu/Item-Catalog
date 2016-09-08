@@ -11,6 +11,11 @@ form {
     margin-bottom: 20px;
 }
 
+ul {
+    list-style: none;
+    padding: 0px;
+}
+
 .main-section {
     margin-top: 15px;
 }
@@ -18,11 +23,18 @@ form {
     border-right: 1px solid #95A5A6;
 }
 
-.latest-items {
+.item-section {
     padding-left: 25px;
 }
 
-ul {
-    list-style: none;
-    padding: 0px;
+.item-title {
+    display: inline-block;
+    margin-right: 15px;
 }
+
+.category-title {
+    display: inline-block;
+    margin-right: 15px
+}
+
+
