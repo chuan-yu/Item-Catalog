@@ -34,46 +34,59 @@ def home_page():
     items = Item.order_by_created_with_limit(limit=7)
     return render_template('index.html', items=items)
 
+
 @app.route('/category/<int:category_id>')
 def category(category_id):
     category = Category.by_id(category_id)
     items = Item.by_category_id(category_id)
     return render_template('category.html', category=category, items=items)
 
+
 @app.route('/category/<int:category_id>/<int:item_id>/')
 def category_item(category_id, item_id):
     item = Item.by_cat_id_and_item_id(category_id, item_id)
     return render_template('category_item.html', item=item)
 
+
 @app.route('/category/new', methods=['GET', 'POST'])
 def new_category():
+    # Handle POST request
     if request.method == 'POST':
-        if login_session.get('user_id'):
+        if is_logged_in():
 
-            # check the category name does not already exist
+            # check the category name does not already exist in DB
             cat = Category.by_name(name=request.form['name'].lower())
             if cat != None:
                 flash("Category %s already exists" % cat.name)
                 return render_template('new_category.html')
 
+            # create new category in DB
             new_category = Category.new(name=request.form['name'],
                                     user_id=login_session.get('user_id'))
             flash("New category %s was added sucessfully" % new_category.name)
             return redirect(url_for('home_page'))
+
+        # If not logged in, redirect to the login page
         else:
             return redirect(url_for('login'))
+
+    # Handle GET request
     else:
-        if login_session.get('user_id'):
+        # If logged in, render the new category form
+        if is_logged_in():
             return render_template('new_category.html')
+        # If not logged in, redirect to the login page
         else:
             flash("Please log in first.")
             return redirect(url_for('login'))
 
+
 @app.route('/item/new', methods=['GET', 'POST'])
 def new_item():
+    # Handle POST request
     if request.method == 'POST':
-        if login_session.get('user_id'):
 
+        if is_logged_in():
             # check that the name does not already exist in the category
             item_to_check = Item.by_name_and_cat_id(name=request.form['name'],
                             category_id=request.form['category'])
@@ -81,86 +94,133 @@ def new_item():
                 flash("Item %s already exists" % item_to_check.name)
                 return render_template('new_item.html')
 
+            # Create the new item in DB
             new_item = Item.new(name=request.form['name'],
                             category_id=request.form['category'],
                             description=request.form['description'],
                             user_id = login_session.get('user_id'))
             flash("Item %s successfully added" % new_item.name)
             return redirect(url_for('home_page'))
+
+        # if not logged in, redirect to the login page
         else:
             flash("Please log in first")
             return redirect(url_for('login'))
+
+    # Handle GET request
     else:
-        if login_session.get('user_id'):
+        # If logged in, render the new item form
+        if is_logged_in():
             return render_template('new_item.html')
+        # If not logged in, redirect to the login page
         else:
             flash("Please log in first")
             return redirect(url_for('login'))
+
 
 @app.route('/category/<int:category_id>/<int:item_id>/update', methods=['GET', 'POST'])
 def update_item(category_id, item_id):
+    # Fetch the item to be updated from DB
     item = Item.by_cat_id_and_item_id(category_id=category_id, item_id=item_id)
 
+    # Handle POST request
     if request.method == 'POST':
-        if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
-            if request.form['name']:
-                item.name = request.form['name']
-            if request.form['description']:
-                item.description = request.form['description']
-            if request.form['category']:
-                item.category_id = request.form['category']
 
-            Item.update(item)
+        # If logged in and the user is the creator, proceed
+        if is_logged_in() and is_creator(item.user_id):
+            # Get new values from the sumbitted form
+            new_name = request.form['name']
+            new_description = request.form['description']
+            new_cat_id = request.form['category']
+            # update the item with new values
+            item.update(new_name=new_name, new_description=new_description,
+                        new_cat_id=new_cat_id)
+            # Redirect after deletion
             flash("Item %s successfully updated" % item.name)
             return redirect(url_for("home_page"))
+
+        # If not logged in or not the creator, redirec to the error page
+        else:
+            return redirect(url_for('error.html'))
+
+    # Handle GET request
     else:
-        if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
+
+        # if user is logged in and is the creator, render the update form
+        if is_logged_in() and is_creator(item.user_id):
             return render_template('update_item.html', category_id=category_id, item=item)
+        # if not logged in or not the creator, redirec to the error page
         else:
             return redirect(url_for('error.html'))
 
 
 @app.route('/category/<int:category_id>/delete', methods=['GET', 'POST'])
 def delete_category(category_id):
+    # Fetch the category to be deleted from the DB
     category = Category.by_id(id=category_id)
-    # category = session.query(Category).filter_by(id=category_id).one()
+
+    # Handle POST request
     if request.method == 'POST':
-        if login_session.get('user_id') and login_session.get('user_id') == category.user_id:
+
+        # if the user is logged in and is the creator, proceed
+        if is_logged_in() and is_creator(category.user_id):
             # delete all items in the category
             items_in_category = Item.by_category_id(category_id=category_id)
             for item in items_in_category:
                 Item.delete(item)
             # delete the category
             Category.delete(category)
+            # redirect after deletion
             flash("Category %s deleted successfully" % category.name)
             return redirect(url_for('home_page'))
+
+    # Handle GET request
     else:
-        if login_session.get('user_id') and login_session.get('user_id') == category.user_id:
+        # If user is logged in and is the creator, render the delete confirmation page
+        if is_logged_in() and is_creator(category.user_id):
             return render_template('delete_category.html', category=category)
+        # if user is not logged in or not the creator, redirect to the error page
         else:
             return redirect(url_for('error'))
 
+
 @app.route('/category/<int:category_id>/<int:item_id>/delete', methods=['GET', 'POST'])
 def delete_item(category_id, item_id):
+    # Fetch the item to be deleted from the DB
     item = Item.by_cat_id_and_item_id(category_id=category_id, item_id=item_id)
+
+    # Handle POST request
     if request.method == 'POST':
-        if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
+
+        # If user is logged in and is creator, proceed
+        if is_logged_in() and is_creator(item.user_id):
             Item.delete(item)
             flash("Item %s deleted successfully" % item.name)
             return redirect(url_for('home_page'))
+
+        # If user is not logged in or not the creator, redirect to the error page
+        else:
+            return redirect(url_for('error'))
+
+    # Handle GET request
     else:
-        if login_session.get('user_id') and login_session.get('user_id') == item.user_id:
+        # if user is logged in or is the creator, render the delete confirmation page
+        if is_logged_in() and is_creator(item.user_id):
             category = Category.by_id(id=category_id)
             return render_template('delete_item.html', category=category, item=item)
+        # If not, redirect to the error page
         else:
             return redirect(url_for('error.html'))
 
+
 @app.route('/login')
 def login():
+    # Generate a STATE value to be sent to the client
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
     return render_template('login.html', STATE=state)
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -187,7 +247,7 @@ def gconnect():
                     token_status['code'])
         return response
 
-    # check whether the user is already logged in
+    # check whether the user is already connected to Google
     if is_user_logged_in_google(login_session, credentials.id_token['sub']):
         response = create_json_response('Current user is already connected', 200)
         return response
@@ -200,7 +260,6 @@ def gconnect():
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url, params=params)
-
     user_info = answer.json()
 
     # check whether the user exists in the DB. If not, create new user.
@@ -208,6 +267,7 @@ def gconnect():
     if user:
         user_id = user.id
     else:
+        # create new user and get the user_id
         new_user = User.new(username=user_info['name'],
                     email=user_info['email'], picture=user_info['picture'])
         user_id = User.get_id_by_email(session, new_user.email)
@@ -219,6 +279,7 @@ def gconnect():
     login_session['picture'] = user_info['picture']
     login_session['email'] = user_info['email']
 
+    # output to the client
     output = ""
     output += "<h3>"
     output += "Welcome, "
@@ -226,9 +287,12 @@ def gconnect():
     output += "</h3>"
     return output
 
+
 @app.route('/gdisconnect')
 def gdisconnect():
+    # Get the credentials from the session.
     credentials = client.OAuth2Credentials.from_json(login_session['credentials'])
+    # If credentials don't exist, abort
     if credentials is None:
         print 'Credentials is None'
         response = create_json_response('Current user not connected.', 401)
@@ -247,6 +311,8 @@ def gdisconnect():
     del login_session['username']
     del login_session['email']
     del login_session['picture']
+
+    # send successful response to the client
     response = create_json_response('Successfully disconnected', 200)
     return response
 
@@ -255,22 +321,27 @@ def gdisconnect():
 def error():
     return render_template('error.html')
 
-# JSON API
+
+# JSON APIs
+
 
 @app.route('/categories/JSON')
 def categories_json():
     categories = session.query(Category).all()
     return jsonify(Categories=[c.serialize for c in categories])
 
+
 @app.route('/items/JSON')
 def items_json():
     items = session.query(Item).all()
     return jsonify(Items=[i.serialize for i in items])
 
+
 @app.route('/category/<int:category_id>/JSON')
 def category_json(category_id):
     items = session.query(Item).filter_by(category_id=category_id).all()
     return jsonify(Items=[i.serialize for i in items])
+
 
 @app.route('/category/<int:category_id>/item/<int:item_id>/JSON')
 def item_json(category_id, item_id):
@@ -281,10 +352,28 @@ def item_json(category_id, item_id):
 # Helper Functions
 
 
+# check that user is logged in
+def is_logged_in():
+    if login_session['user_id']:
+        return True
+    else:
+        return False
+
+
+# check that user is the creator of an item or category
+def is_creator(user_id):
+    if login_session['user_id'] == user_id:
+        return True
+    else:
+        return False
+
+
+# create a JSON response with message and response code
 def create_json_response(message, code):
     response = make_response(json.dumps(message), code)
     response.headers['Content-Type'] = 'application/json'
     return response
+
 
 # validate Google OAuth access token
 def valid_token(credentials):
@@ -325,6 +414,7 @@ def valid_token(credentials):
     token_status['response_code'] = 200
     return token_status
 
+
 # check whether used is already logged using Goolge account
 def is_user_logged_in_google(session, google_id):
     stored_credentials = session.get('credentials')
@@ -333,8 +423,6 @@ def is_user_logged_in_google(session, google_id):
         return True
     else:
         return False
-
-
 
 
 if __name__ == '__main__':

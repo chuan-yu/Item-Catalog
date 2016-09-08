@@ -197,10 +197,15 @@ class Item(Base):
             print e
             return None
 
-    @classmethod
-    def update(cls, item):
+    def update(self, new_name, new_cat_id, new_description):
+        if new_name:
+            self.name = new_name
+        if new_cat_id:
+            self.category_id = new_cat_id
+        if new_description:
+            self.description = new_description
         try:
-            session.add(item)
+            session.add(self)
             session.commit
         except Exception, e:
             print "Update item failed"
