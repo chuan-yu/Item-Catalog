@@ -14,7 +14,7 @@
         {% endif %}
         <ul class="latest-items-list">
             {% for item in items %}
-            <li class="latest-item-list-item"><a href="{{url_for('category_item', category_id=item.category_id, item_id=item.id)}}">{{item.name}}</a></li>
+            <li class="latest-item-list-item text-capitalize"><a href="{{url_for('category_item', category_id=item.category_id, item_id=item.id)}}">{{item.name}}</a></li>
             {% endfor %}
         </ul>
     </div>
