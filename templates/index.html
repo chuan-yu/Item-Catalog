@@ -9,7 +9,7 @@
     <div class="col-xs-12 col-sm-9 main-section item-section">
 
         <h3 class="item-title">Latest Items</h3>
-        {% if login_session.username %}
+        {% if login_session.user_id %}
         <a href="{{url_for('new_item')}}">Add Item</a>
         {% endif %}
         <ul class="latest-items-list">

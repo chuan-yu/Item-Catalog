@@ -12,7 +12,7 @@
 <body>
     <nav class="navbar-collapse">
         <ul class="nav nav-pills pull-right">
-            {% if not login_session.username %}
+            {% if not login_session.user_id %}
             <li><a href="{{url_for('login')}}">Login</a></li>
             {% else %}
             <li><a href="#" id="logout_button">Logout</a></li>
