@@ -220,10 +220,11 @@ def gconnect():
     login_session['email'] = user_info['email']
 
     output = ""
-    output += "welcome"
-
+    output += "<h3>"
+    output += "Welcome, "
+    output += login_session['username']
+    output += "</h3>"
     return output
-
 
 @app.route('/gdisconnect')
 def gdisconnect():
