@@ -9,13 +9,14 @@ This is a web application used to manage and display an item catalog. The main f
 
 The application is created using **Flask** framework and **SqlAlchemy**
 
-## System Requirements
+## Technologies Used
 
 1. Vagrant
 2. Flask
 3. SqlAlchemy
 4. Google oauth2client library
 5. PostgreSQL
+6. Bootstrap
 
 
 ## Steps to Run the Pogramme
