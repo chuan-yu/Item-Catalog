@@ -6,6 +6,7 @@ This is a web application used to manage and display an item catalog. The main f
 1. Display items by category
 2. Authorized users can create, edit and delete items and categories
 3. User can sign in with a Google account
+4. Include a RESTful API with which JSON data can be retrieved
 
 The application is created using **Flask** framework and **SqlAlchemy**
 
